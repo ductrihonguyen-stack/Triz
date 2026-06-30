@@ -1,0 +1,578 @@
+-- [[ SHARK MENU - ULTIMATE FLY ENGINE (HOLD TO REPEAT & KEYBOARD INPUT) ]] --
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- --- [ BỘ LỌC CHỐNG SẬP UI MOBILE ] ---
+local ParentGui
+if gethui then
+    ParentGui = gethui()
+else
+    local success, _ = pcall(function() ParentGui = game:GetService("CoreGui") end)
+    if not success or not ParentGui then 
+        ParentGui = LocalPlayer:WaitForChild("PlayerGui") 
+    end
+end
+
+if ParentGui:FindFirstChild("SharkMenuGui") then 
+    ParentGui:FindFirstChild("SharkMenuGui"):Destroy() 
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SharkMenuGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = ParentGui
+
+-- --- [ 1. NÚT VUÔNG MỞ MENU 🦈 ] ---
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Name = "SharkOpenBtn"
+OpenBtn.Size = UDim2.new(0, 55, 0, 55)
+OpenBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+OpenBtn.Text = "🦈"
+OpenBtn.TextSize = 28
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenBtn.Visible = true 
+OpenBtn.Active = true
+OpenBtn.ZIndex = 15
+OpenBtn.Parent = ScreenGui
+
+local OpenCorner = Instance.new("UICorner") OpenCorner.CornerRadius = UDim.new(0, 12) OpenCorner.Parent = OpenBtn
+local OpenStroke = Instance.new("UIStroke") OpenStroke.Color = Color3.fromRGB(0, 140, 255) OpenStroke.Thickness = 2 OpenStroke.Parent = OpenBtn
+
+
+-- --- [ 2. FRAME TỔNG ] ---
+local MainContainer = Instance.new("Frame")
+MainContainer.Name = "MainContainer"
+MainContainer.Size = UDim2.new(0, 385, 0, 400)
+MainContainer.AnchorPoint = Vector2.new(0.5, 0.5) 
+MainContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainContainer.BackgroundTransparency = 1
+MainContainer.Visible = false 
+MainContainer.Active = false
+MainContainer.Parent = ScreenGui
+
+
+-- --- [ 3. SIDEBAR TRÁI ] ---
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 105, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainContainer
+
+local SidebarCorner = Instance.new("UICorner") SidebarCorner.CornerRadius = UDim.new(0, 14) SidebarCorner.Parent = Sidebar
+local SidebarStroke = Instance.new("UIStroke") SidebarStroke.Color = Color3.fromRGB(0, 140, 255) SidebarStroke.Thickness = 1.5 SidebarStroke.Parent = Sidebar
+
+local LogoCircle = Instance.new("Frame")
+LogoCircle.Size = UDim2.new(0, 56, 0, 56)
+LogoCircle.Position = UDim2.new(0.5, -28, 0, 16)
+LogoCircle.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+LogoCircle.Parent = Sidebar
+local LCC = Instance.new("UICorner") LCC.CornerRadius = UDim.new(1, 0) LCC.Parent = LogoCircle
+local LCS = Instance.new("UIStroke") LCS.Color = Color3.fromRGB(0, 110, 220) LCS.Thickness = 1 LCS.Parent = LogoCircle
+
+local LogoIcon = Instance.new("TextLabel")
+LogoIcon.Size = UDim2.new(1, 0, 1, 0)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Text = "🦈"
+LogoIcon.TextSize = 30
+LogoIcon.Font = Enum.Font.GothamBold
+LogoIcon.Parent = LogoCircle
+
+local BrandTitle = Instance.new("TextLabel")
+BrandTitle.Size = UDim2.new(1, 0, 0, 16)
+BrandTitle.Position = UDim2.new(0, 0, 0, 78)
+BrandTitle.BackgroundTransparency = 1
+BrandTitle.Text = "SHARK"
+BrandTitle.TextColor3 = Color3.fromRGB(0, 140, 255)
+BrandTitle.Font = Enum.Font.GothamBold
+BrandTitle.TextSize = 12
+BrandTitle.Parent = Sidebar
+
+local BrandSubtitle = Instance.new("TextLabel")
+BrandSubtitle.Size = UDim2.new(1, 0, 0, 10)
+BrandSubtitle.Position = UDim2.new(0, 0, 0, 92)
+BrandSubtitle.BackgroundTransparency = 1
+BrandSubtitle.Text = "M E N U"
+BrandSubtitle.TextColor3 = Color3.fromRGB(100, 100, 100)
+BrandSubtitle.Font = Enum.Font.Gotham
+BrandSubtitle.TextSize = 8
+BrandSubtitle.Parent = Sidebar
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 0, 120)
+TabContainer.Position = UDim2.new(0, 0, 0, 120)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = Sidebar
+
+local TabMain = Instance.new("Frame")
+TabMain.Size = UDim2.new(1, -12, 0, 32)
+TabMain.Position = UDim2.new(0, 6, 0, 0)
+TabMain.BackgroundColor3 = Color3.fromRGB(20, 30, 45)
+TabMain.BackgroundTransparency = 0.4
+local TMC = Instance.new("UICorner") TMC.CornerRadius = UDim.new(0, 6) TMC.Parent = TabMain
+local TMT = Instance.new("TextLabel")
+TMT.Size = UDim2.new(1, 0, 1, 0) TMT.BackgroundTransparency = 1 TMT.Text = "🏠  MAIN"
+TMT.TextColor3 = Color3.fromRGB(0, 140, 255) TMT.Font = Enum.Font.GothamBold TMT.TextSize = 10 TMT.Parent = TabMain
+TabMain.Parent = TabContainer
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(1, -16, 0, 32)
+CloseBtn.Position = UDim2.new(0, 8, 1, -42)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "❌ CLOSE"
+CloseBtn.TextColor3 = Color3.fromRGB(0, 140, 255)
+CloseBtn.TextSize = 10
+CloseBtn.Active = true
+CloseBtn.ZIndex = 10
+CloseBtn.Parent = Sidebar
+local CloseCorner = Instance.new("UICorner") CloseCorner.CornerRadius = UDim.new(0, 8) CloseCorner.Parent = CloseBtn
+local CloseStroke = Instance.new("UIStroke") CloseStroke.Color = Color3.fromRGB(0, 70, 150) CloseStroke.Thickness = 1 CloseStroke.Parent = CloseBtn
+
+
+-- --- [ 4. PANEL PHẢI ] ---
+local MainPanel = Instance.new("Frame")
+MainPanel.Name = "MainPanel"
+MainPanel.Size = UDim2.new(0, 275, 1, 0)
+MainPanel.Position = UDim2.new(0, 110, 0, 0) 
+MainPanel.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+MainPanel.BorderSizePixel = 0
+MainPanel.Parent = MainContainer
+
+local PanelCorner = Instance.new("UICorner") PanelCorner.CornerRadius = UDim.new(0, 14) PanelCorner.Parent = MainPanel
+local PanelStroke = Instance.new("UIStroke") PanelStroke.Color = Color3.fromRGB(0, 140, 255) PanelStroke.Thickness = 1.5 PanelStroke.Parent = MainPanel
+
+local PanelHeader = Instance.new("Frame")
+PanelHeader.Size = UDim2.new(1, 0, 0, 50)
+PanelHeader.BackgroundTransparency = 1
+PanelHeader.Parent = MainPanel
+
+local PanelTitle = Instance.new("TextLabel")
+PanelTitle.Size = UDim2.new(1, 0, 1, 0)
+PanelTitle.BackgroundTransparency = 1
+PanelTitle.Text = "SHARK MENU"
+PanelTitle.TextColor3 = Color3.fromRGB(0, 140, 255)
+PanelTitle.Font = Enum.Font.GothamBold
+PanelTitle.TextSize = 13
+PanelTitle.Parent = PanelHeader
+
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(0, 24, 0, 22)
+MinimizeBtn.Position = UDim2.new(1, -34, 0.5, -11)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeBtn.TextSize = 11
+MinimizeBtn.Active = true
+MinimizeBtn.ZIndex = 10
+MinimizeBtn.Parent = PanelHeader
+local MiniCorner = Instance.new("UICorner") MiniCorner.CornerRadius = UDim.new(0, 6) MiniCorner.Parent = MinimizeBtn
+local MiniStroke = Instance.new("UIStroke") MiniStroke.Color = Color3.fromRGB(40, 40, 40) MiniStroke.Thickness = 1 MiniStroke.Parent = MinimizeBtn
+
+local Separator = Instance.new("Frame")
+Separator.Size = UDim2.new(1, -24, 0, 1)
+Separator.Position = UDim2.new(0, 12, 0, 48)
+Separator.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Separator.BorderSizePixel = 0
+Separator.Parent = MainPanel
+
+local ContentBody = Instance.new("ScrollingFrame")
+ContentBody.Size = UDim2.new(1, -20, 1, -70)
+ContentBody.Position = UDim2.new(0, 10, 0, 56)
+ContentBody.BackgroundTransparency = 1
+ContentBody.CanvasSize = UDim2.new(0, 0, 0, 450)
+ContentBody.ScrollBarThickness = 0
+ContentBody.Parent = MainPanel
+
+local ContentLayout = Instance.new("UIListLayout")
+ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ContentLayout.Padding = UDim.new(0, 10)
+ContentLayout.Parent = ContentBody
+
+
+-- --- [ 5. THIẾT KẾ CARD "FLY" (CẬP NHẬT HỖ TRỢ NHẬP PHÍM VÀ AUTO-HOLD) ] ---
+local FlyCard = Instance.new("Frame")
+FlyCard.Name = "FlyCard"
+FlyCard.Size = UDim2.new(1, 0, 0, 135)
+FlyCard.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+FlyCard.BorderSizePixel = 0
+FlyCard.Parent = ContentBody
+
+local CardCorner = Instance.new("UICorner") CardCorner.CornerRadius = UDim.new(0, 10) CardCorner.Parent = FlyCard
+local CardStroke = Instance.new("UIStroke") CardStroke.Color = Color3.fromRGB(24, 24, 24) CardStroke.Thickness = 1 CardStroke.Parent = FlyCard
+
+local FlyIcon = Instance.new("TextLabel")
+FlyIcon.Size = UDim2.new(0, 30, 0, 30)
+FlyIcon.Position = UDim2.new(0, 12, 0, 12)
+FlyIcon.BackgroundTransparency = 1
+FlyIcon.Text = "🚀"
+FlyIcon.TextSize = 20
+FlyIcon.Parent = FlyCard
+
+local FlyTitle = Instance.new("TextLabel")
+FlyTitle.Size = UDim2.new(0, 100, 0, 16)
+FlyTitle.Position = UDim2.new(0, 48, 0, 12)
+FlyTitle.BackgroundTransparency = 1
+FlyTitle.Text = "FLY"
+FlyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyTitle.Font = Enum.Font.GothamBold
+FlyTitle.TextSize = 13
+FlyTitle.TextXAlignment = Enum.TextXAlignment.Left
+FlyTitle.Parent = FlyCard
+
+local FlyDesc = Instance.new("TextLabel")
+FlyDesc.Size = UDim2.new(0, 150, 0, 14)
+FlyDesc.Position = UDim2.new(0, 48, 0, 28)
+FlyDesc.BackgroundTransparency = 1
+FlyDesc.Text = "Giữ nút để auto tăng/giảm | Chạm số để gõ số"
+FlyDesc.TextColor3 = Color3.fromRGB(140, 140, 140)
+FlyDesc.Font = Enum.Font.Gotham
+FlyDesc.TextSize = 10
+FlyDesc.TextXAlignment = Enum.TextXAlignment.Left
+FlyDesc.Parent = FlyCard
+
+-- Công tắc ON/OFF
+local ToggleOuter = Instance.new("TextButton")
+ToggleOuter.Name = "ToggleOuter"
+ToggleOuter.Size = UDim2.new(0, 52, 0, 24)
+ToggleOuter.Position = UDim2.new(1, -64, 0, 15)
+ToggleOuter.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleOuter.Text = "OFF"
+ToggleOuter.Font = Enum.Font.GothamBold
+ToggleOuter.TextColor3 = Color3.fromRGB(150, 150, 150)
+ToggleOuter.TextSize = 9
+ToggleOuter.TextXAlignment = Enum.TextXAlignment.Right
+ToggleOuter.Active = true
+ToggleOuter.ZIndex = 6
+ToggleOuter.Parent = FlyCard
+
+local TOCorner = Instance.new("UICorner") TOCorner.CornerRadius = UDim.new(1, 0) TOCorner.Parent = ToggleOuter
+local TOPadding = Instance.new("UIPadding") TOPadding.PaddingRight = UDim.new(0, 8) TOPadding.Parent = ToggleOuter
+
+local ToggleBall = Instance.new("Frame")
+ToggleBall.Name = "ToggleBall"
+ToggleBall.Size = UDim2.new(0, 18, 0, 18)
+ToggleBall.Position = UDim2.new(0, 3, 0.5, -9)
+ToggleBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBall.Parent = ToggleOuter
+local TBCorner = Instance.new("UICorner") TBCorner.CornerRadius = UDim.new(1, 0) TBCorner.Parent = ToggleBall
+
+-- Cụm tăng giảm tốc độ Fly
+local SpeedContainer = Instance.new("Frame")
+SpeedContainer.Size = UDim2.new(1, -24, 0, 34)
+SpeedContainer.Position = UDim2.new(0, 12, 0, 64)
+SpeedContainer.BackgroundTransparency = 1
+SpeedContainer.Parent = FlyCard
+
+local MinusBtn = Instance.new("TextButton")
+MinusBtn.Size = UDim2.new(0, 48, 1, 0)
+MinusBtn.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
+MinusBtn.Text = "—"
+MinusBtn.Font = Enum.Font.GothamBold
+MinusBtn.TextColor3 = Color3.fromRGB(0, 160, 255)
+MinusBtn.TextSize = 12
+MinusBtn.Active = true
+MinusBtn.ZIndex = 7
+MinusBtn.Parent = SpeedContainer
+local MBCorner = Instance.new("UICorner") MBCorner.CornerRadius = UDim.new(0, 6) MBCorner.Parent = MinusBtn
+local MBStroke = Instance.new("UIStroke") MBStroke.Color = Color3.fromRGB(0, 100, 220) MBStroke.Thickness = 1 MBStroke.Parent = MinusBtn
+
+local ValueBox = Instance.new("Frame")
+ValueBox.Size = UDim2.new(1, -112, 1, 0)
+ValueBox.Position = UDim2.new(0, 56, 0, 0)
+ValueBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+ValueBox.Parent = SpeedContainer
+local VBCorner = Instance.new("UICorner") VBCorner.CornerRadius = UDim.new(0, 6) VBCorner.Parent = ValueBox
+local VBStroke = Instance.new("UIStroke") VBStroke.Color = Color3.fromRGB(25, 25, 25) VBStroke.Thickness = 1 VBStroke.Parent = ValueBox
+
+-- NÂNG CẤP THÀNH TEXTBOX (Cho phép tự nhập bàn phím điện thoại)
+local ValueLabel = Instance.new("TextBox")
+ValueLabel.Size = UDim2.new(1, 0, 1, 0)
+ValueLabel.BackgroundTransparency = 1
+ValueLabel.Text = "20"
+ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ValueLabel.Font = Enum.Font.GothamBold
+ValueLabel.TextSize = 14
+ValueLabel.ClearTextOnFocus = false -- Không xóa số cũ khi nhấn vào gõ
+ValueLabel.Parent = ValueBox
+
+local PlusBtn = Instance.new("TextButton")
+PlusBtn.Size = UDim2.new(0, 48, 1, 0)
+PlusBtn.Position = UDim2.new(1, -48, 0, 0)
+PlusBtn.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
+PlusBtn.Text = "+"
+PlusBtn.Font = Enum.Font.GothamBold
+PlusBtn.TextColor3 = Color3.fromRGB(0, 160, 255)
+PlusBtn.TextSize = 15
+PlusBtn.Active = true
+PlusBtn.ZIndex = 7
+PlusBtn.Parent = SpeedContainer
+local PBCorner = Instance.new("UICorner") PBCorner.CornerRadius = UDim.new(0, 6) PBCorner.Parent = PlusBtn
+local PBStroke = Instance.new("UIStroke") PBStroke.Color = Color3.fromRGB(0, 100, 220) PBStroke.Thickness = 1 PBStroke.Parent = PlusBtn
+
+local DefaultLabel = Instance.new("TextLabel")
+DefaultLabel.Size = UDim2.new(1, 0, 0, 14)
+DefaultLabel.Position = UDim2.new(0, 12, 0, 108)
+DefaultLabel.BackgroundTransparency = 1
+DefaultLabel.Text = "Tốc độ tối đa khuyên dùng: 300 | Giới hạn số thực tế"
+DefaultLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+DefaultLabel.Font = Enum.Font.Gotham
+DefaultLabel.TextSize = 9
+DefaultLabel.TextXAlignment = Enum.TextXAlignment.Left
+DefaultLabel.Parent = FlyCard
+
+
+-- --- [ 6. DẢI KÉO THẢ VÔ HÌNH ] ---
+local UnifiedDragBar = Instance.new("Frame")
+UnifiedDragBar.Name = "UnifiedDragBar"
+UnifiedDragBar.Size = UDim2.new(1, -60, 0, 110) 
+UnifiedDragBar.BackgroundTransparency = 0.99 
+UnifiedDragBar.Active = true
+UnifiedDragBar.ZIndex = 8
+UnifiedDragBar.Parent = MainContainer
+
+
+-- --- [ 7. ĐỘNG CƠ KÉO THẢ DI ĐỘNG ] ---
+local function makeMobileSmoothDrag(targetFrame, handleArea)
+    local dragToggle = false
+    local dragStart = nil
+    local startPos = nil
+
+    handleArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragToggle = true
+            dragStart = input.Position
+            startPos = Vector2.new(targetFrame.Position.X.Offset, targetFrame.Position.Y.Offset)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            targetFrame.Position = UDim2.new(
+                targetFrame.Position.X.Scale, 
+                startPos.X + delta.X, 
+                targetFrame.Position.Y.Scale, 
+                startPos.Y + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragToggle = false
+        end
+    end)
+end
+
+makeMobileSmoothDrag(MainContainer, UnifiedDragBar)
+
+
+-- --- [ 8. ĐỘNG CƠ THÔNG MINH CHO NÚT KHỞI ĐỘNG 🦈 ] ---
+local function makeButtonSmartEngine(btnFrame, clickCallback)
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    local hasMovedSignificant = false
+
+    btnFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            hasMovedSignificant = false
+            dragStart = input.Position
+            startPos = Vector2.new(btnFrame.Position.X.Offset, btnFrame.Position.Y.Offset)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            if delta.Magnitude > 5 then
+                hasMovedSignificant = true
+            end
+            btnFrame.Position = UDim2.new(
+                btnFrame.Position.X.Scale, 
+                startPos.X + delta.X, 
+                btnFrame.Position.Y.Scale, 
+                startPos.Y + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                dragging = false
+                if not hasMovedSignificant and btnFrame.Visible then
+                    clickCallback()
+                end
+            end
+        end
+    end)
+end
+
+makeButtonSmartEngine(OpenBtn, function()
+    MainContainer.Visible = true
+    OpenBtn.Visible = false
+end)
+
+
+-- --- [ 9. THUẬT TOÁN LOGIC ĐỘNG CƠ FLY 3D MOBILE ] ---
+local isFlying = false
+local currentFlySpeed = 20
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+
+local function startFlyingEngine()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+    local camera = workspace.CurrentCamera
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.Parent = hrp
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    bodyGyro.CFrame = hrp.CFrame
+    bodyGyro.Parent = hrp
+    
+    humanoid.PlatformStand = true
+    
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not isFlying or not hrp or not humanoid then return end
+        bodyGyro.CFrame = camera.CFrame
+        
+        local moveDirection = humanoid.MoveDirection
+        if moveDirection.Magnitude > 0 then
+            local camX = camera.CFrame.RightVector
+            local camZ = camera.CFrame.LookVector
+            
+            local forwardForce = moveDirection:Dot(Vector3.new(camZ.X, 0, camZ.Z).Unit)
+            local rightForce = moveDirection:Dot(Vector3.new(camX.X, 0, camX.Z).Unit)
+            
+            local finalFlyVector = (camZ * forwardForce) + (camX * rightForce)
+            if finalFlyVector.Magnitude > 0 then finalFlyVector = finalFlyVector.Unit end
+            
+            bodyVelocity.Velocity = finalFlyVector * currentFlySpeed
+        else
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+    end)
+end
+
+local function stopFlyingEngine()
+    if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
+end
+
+-- Sự kiện nhấn ON/OFF Fly
+ToggleOuter.MouseButton1Click:Connect(function()
+    isFlying = not isFlying
+    if isFlying then
+        ToggleOuter.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
+        ToggleOuter.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleOuter.Text = "ON"
+        ToggleOuter.TextXAlignment = Enum.TextXAlignment.Left
+        ToggleBall.Position = UDim2.new(1, -21, 0.5, -9)
+        startFlyingEngine()
+    else
+        ToggleOuter.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        ToggleOuter.TextColor3 = Color3.fromRGB(150, 150, 150)
+        ToggleOuter.Text = "OFF"
+        ToggleOuter.TextXAlignment = Enum.TextXAlignment.Right
+        ToggleBall.Position = UDim2.new(0, 3, 0.5, -9)
+        stopFlyingEngine()
+    end
+end)
+
+
+-- --- [ NÂNG CẤP MỚI: ĐỘNG CƠ GIỮ ĐỂ AUTO TĂNG/GIẢM THEO 1 ĐƠN VỊ ] ---
+local function setupAutoHoldEngine(button, stepValue)
+    local isHolding = false
+    
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isHolding = true
+            
+            -- Lần bấm đầu tiên: tăng/giảm đúng 1 số
+            currentFlySpeed = math.clamp(currentFlySpeed + stepValue, 1, 300)
+            ValueLabel.Text = tostring(currentFlySpeed)
+            
+            -- Chờ 0.4 giây xem người dùng có giữ tay lại không
+            task.wait(0.4)
+            
+            -- Nếu vẫn đang giữ tay thì kích hoạt chế độ lặp liên tục siêu tốc
+            while isHolding do
+                currentFlySpeed = math.clamp(currentFlySpeed + stepValue, 1, 300)
+                ValueLabel.Text = tostring(currentFlySpeed)
+                task.wait(0.04) -- Cực nhanh (25 số mỗi giây)
+            end
+        end
+    end)
+    
+    button.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isHolding = false -- Thả tay ra thì dừng lặp ngay lập tức
+        end
+    end)
+end
+
+setupAutoHoldEngine(MinusBtn, -1) -- Bấm/Giữ giảm 1 số
+setupAutoHoldEngine(PlusBtn, 1)   -- Bấm/Giữ tăng 1 số
+
+
+-- --- [ NÂNG CẤP MỚI: BỘ LỌC CHỮ KHI TỰ GÕ BẰNG BÀN PHÍM TỰ ĐỘNG KHÓA CHỮ ] ---
+ValueLabel:GetPropertyChangedSignal("Text"):Connect(function()
+    -- Dùng Regex để tìm và xóa sạch các ký tự KHÔNG PHẢI LÀ SỐ (%D) ngay khi đang gõ
+    local cleanNumbers = ValueLabel.Text:gsub("%D", "")
+    
+    if ValueLabel.Text ~= cleanNumbers then
+        ValueLabel.Text = cleanNumbers -- Ép xóa chữ ngay trên màn hình bàn phím
+    end
+    
+    -- Áp dụng số vừa gõ vào tốc độ bay thực tế
+    local numericValue = tonumber(cleanNumbers)
+    if numericValue then
+        currentFlySpeed = math.clamp(numericValue, 1, 300) -- Khóa tốc độ trong khoảng an toàn 1 - 300
+    end
+end)
+
+-- Khi người dùng tắt bàn phím/bấm ra ngoài màn hình
+ValueLabel.FocusLost:Connect(function()
+    if ValueLabel.Text == "" or tonumber(ValueLabel.Text) == nil then
+        ValueLabel.Text = tostring(currentFlySpeed) -- Nếu bỏ trống thì tự điền lại tốc độ hiện tại
+    else
+        ValueLabel.Text = tostring(currentFlySpeed) -- Đảm bảo hiển thị chuẩn số đã được clamp
+    end
+end)
+
+
+-- --- [ 10. PHỤ TRỢ NÚT ĐÓNG AN TOÀN ] ---
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainContainer.Visible = false
+    OpenBtn.Visible = true
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    stopFlyingEngine()
+    ScreenGui:Destroy()
+end)
