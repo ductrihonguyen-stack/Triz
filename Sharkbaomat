@@ -1,4 +1,4 @@
--- [[ SHARK MENU V3 - ULTRA PREMIUM KEY SYSTEM & CYBERPUNK GUI ]] --
+-- [[ SHARK MENU V3 - FIXED KEY SYSTEM & CYBERPUNK GUI ]] --
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
@@ -32,12 +32,12 @@ local TARGET_PART = "Head"
 local CurrentTarget, flyConnection, bodyVelocity, bodyGyro = nil, nil, nil, nil
 local PlayerConnections = {}
 local CorrectKey = "keyshark2807"
-local SecretCombo = {3, 6, 9} -- Thứ tự vượt mã 3 lớp (Lớp 1: Số 3 -> Lớp 2: Số 6 -> Lớp 3: Số 9)
+local SecretCombo = {3, 6, 9} 
 local InputComboState = 1
 local CountdownTime = 180
 local CountdownActive = false
 
--- --- [ HÀM HIỆU ỨNG ANIMATION MỞ/TẮT POP-UP TỪ TÂM ] ---
+-- --- [ HÀM HIỆU ỨNG ANIMATION FIX LỖI CHẤM ĐỎ (CHUYỂN SANG QUAD SMOOTH) ] ---
 local function playPopUpAnimation(frame, open, targetSize, callback)
     frame.AnchorPoint = Vector2.new(0.5, 0.5)
     frame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -46,15 +46,18 @@ local function playPopUpAnimation(frame, open, targetSize, callback)
     if open then
         frame.Size = UDim2.new(0, 0, 0, 0)
         frame.Visible = true
-        local tween = TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingStyle.Out), {Size = targetSize})
+        local tween = TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingStyle.Out), {Size = targetSize})
         tween:Play()
-        if callback then tween.Completed:Connect(callback) end
+        if callback then 
+            local c; c = tween.Completed:Connect(function() c:Disconnect() callback() end) 
+        end
     else
         local tween = TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingStyle.In), {Size = UDim2.new(0, 0, 0, 0)})
         tween:Play()
-        tween.Completed:Connect(function()
+        local c; c = tween.Completed:Connect(function() 
+            c:Disconnect() 
             frame.Visible = false
-            if callback then callback() end
+            if callback then callback() end 
         end)
     end
 end
@@ -78,20 +81,19 @@ local function makeSmoothDrag(targetFrame, handleArea)
     end)
 end
 
--- KHỞI TẠO 4 KHOANG MENU CHÍNH
+-- KHỞI TẠO CÁC PHÂN VÙNG MENU
 local KeyMenu = Instance.new("Frame")
 local GetKeyMenu = Instance.new("Frame")
 local LoadingMenu = Instance.new("Frame")
 local MainContainer = Instance.new("Frame")
 
--- HÀM HỦY TOÀN BỘ SCRIPT KHI HẾT THỜI GIAN
 local function destroyAllScript()
     CountdownActive = false
     ScreenGui:Destroy()
 end
 
 -- =====================================================================
--- [ KHOANG 1: MENU YÊU CẦU KEY (220x160 - Tối ưu hóa từ kích thước 190x140 để vừa vặn) ]
+-- [ KHOANG 1: MENU YÊU CẦU KEY ]
 -- =====================================================================
 KeyMenu.Name = "KeyMenu"
 KeyMenu.BackgroundColor3 = Color3.fromRGB(11, 11, 16)
@@ -99,7 +101,7 @@ KeyMenu.Visible = false
 KeyMenu.Parent = ScreenGui
 
 local KM_Corner = Instance.new("UICorner", KeyMenu) KM_Corner.CornerRadius = UDim.new(0, 14)
-local KM_Stroke = Instance.new("UIStroke", KeyMenu) KM_Stroke.Thickness = 2; KM_Stroke.Color = Color3.fromRGB(255, 50, 50) -- Ban đầu viền đỏ
+local KM_Stroke = Instance.new("UIStroke", KeyMenu) KM_Stroke.Thickness = 2; KM_Stroke.Color = Color3.fromRGB(255, 50, 50) 
 
 local KM_Title = Instance.new("TextLabel", KeyMenu)
 KM_Title.Size = UDim2.new(1, 0, 0, 25) KM_Title.Position = UDim2.new(0, 0, 0, 8)
@@ -129,7 +131,7 @@ Instance.new("UICorner", GetKeyBtn).CornerRadius = UDim.new(0, 8)
 makeSmoothDrag(KeyMenu, KeyMenu)
 
 -- =====================================================================
--- [ KHOANG 2: MENU LẤY KEY TRỰC QUAN (250x325 - ĐỨNG IM TẠI TRUNG TÂM) ]
+-- [ KHOANG 2: MENU LẤY KEY TRỰC QUAN ]
 -- =====================================================================
 GetKeyMenu.Name = "GetKeyMenu"
 GetKeyMenu.Size = UDim2.new(0, 250, 0, 325)
@@ -138,7 +140,7 @@ GetKeyMenu.Visible = false
 GetKeyMenu.Parent = ScreenGui
 
 local GKM_Corner = Instance.new("UICorner", GetKeyMenu) GKM_Corner.CornerRadius = UDim.new(0, 16)
-local GKM_Stroke = Instance.new("UIStroke", GetKeyMenu) GKM_Stroke.Thickness = 2; GKM_Stroke.Color = Color3.fromRGB(0, 150, 255) -- Viền xanh dương
+local GKM_Stroke = Instance.new("UIStroke", GetKeyMenu) GKM_Stroke.Thickness = 2; GKM_Stroke.Color = Color3.fromRGB(0, 150, 255) 
 
 local GridContainer = Instance.new("Frame", GetKeyMenu)
 GridContainer.Size = UDim2.new(0, 180, 0, 180) GridContainer.Position = UDim2.new(0.5, -90, 0, 15)
@@ -162,9 +164,8 @@ local function makeGridSystem()
 
         btn.MouseButton1Click:Connect(function()
             if SecretCombo[InputComboState] == i then
-                btn.BackgroundColor3 = Color3.fromRGB(50, 210, 105) -- Đúng -> Xanh lá
+                btn.BackgroundColor3 = Color3.fromRGB(50, 210, 105) 
                 if InputComboState == 3 then
-                    -- Hoàn thành vượt key xuất sắc!
                     task.wait(0.3)
                     GridContainer:Destroy()
                     if GetKeyMenu:FindFirstChild("TimerLabel") then GetKeyMenu.TimerLabel:Destroy() end
@@ -188,7 +189,7 @@ local function makeGridSystem()
                     
                     BackBtn.MouseButton1Click:Connect(function()
                         playPopUpAnimation(GetKeyMenu, false, UDim2.new(0, 250, 0, 325), function()
-                            GetKeyBtn.Visible = false -- Ẩn nút lấy key đi theo yêu cầu
+                            GetKeyBtn.Visible = false 
                             playPopUpAnimation(KeyMenu, true, UDim2.new(0, 220, 0, 160))
                         end)
                     end)
@@ -196,7 +197,7 @@ local function makeGridSystem()
                     InputComboState = InputComboState + 1
                 end
             else
-                btn.BackgroundColor3 = Color3.fromRGB(240, 70, 70) -- Sai -> Đỏ
+                btn.BackgroundColor3 = Color3.fromRGB(240, 70, 70) 
                 task.wait(0.4)
                 resetKeyVerificationLevel()
             end
@@ -228,7 +229,6 @@ end
 
 ResetText.MouseButton1Click:Connect(resetKeyVerificationLevel)
 
--- BỘ ĐẾM NGƯỢC THỜI GIAN CHẠY NGẦM
 task.spawn(function()
     while task.wait(1) do
         if CountdownActive then
@@ -245,7 +245,7 @@ task.spawn(function()
 end)
 
 -- =====================================================================
--- [ KHOANG 3: LOADING BAR HOÀN THIỆN (150x100) ]
+-- [ KHOANG 3: LOADING BAR HOÀN THIỆN ]
 -- =====================================================================
 LoadingMenu.Name = "LoadingMenu"
 LoadingMenu.Size = UDim2.new(0, 150, 0, 100)
@@ -270,16 +270,16 @@ LoadTitle.BackgroundTransparency = 1; LoadTitle.Text = "LOADING SYSTEM..."
 LoadTitle.TextColor3 = Color3.fromRGB(200, 200, 210) LoadTitle.Font = Enum.Font.GothamBold; LoadTitle.TextSize = 10
 
 -- =====================================================================
--- [ KHOANG 4: MENU CHÍNH CYBERPUNK CHẤT CHÁY NGẦU (530x330) ]
+-- [ KHOANG 4: MENU CHÍNH CYBERPUNK (530x330) ]
 -- =====================================================================
 MainContainer.Name = "MainContainer"
-MainContainer.Size = UDim2.new(0, 530, 0, 330) -- Kích thước hầm hố chuẩn 530x330
+MainContainer.Size = UDim2.new(0, 530, 0, 330) 
 MainContainer.BackgroundColor3 = Color3.fromRGB(6, 7, 11)
 MainContainer.Visible = false
 MainContainer.Parent = ScreenGui
 
 local MC_Corner = Instance.new("UICorner", MainContainer) MC_Corner.CornerRadius = UDim.new(0, 18)
-local MC_Stroke = Instance.new("UIStroke", MainContainer) MC_Stroke.Thickness = 2.5; MC_Stroke.Color = Color3.fromRGB(0, 255, 200) -- Viền Neon Cyan cực ngầu
+local MC_Stroke = Instance.new("UIStroke", MainContainer) MC_Stroke.Thickness = 2.5; MC_Stroke.Color = Color3.fromRGB(0, 255, 200) 
 
 local Sidebar = Instance.new("Frame", MainContainer)
 Sidebar.Size = UDim2.new(0, 145, 1, 0) Sidebar.BackgroundColor3 = Color3.fromRGB(10, 11, 17) Sidebar.BorderSizePixel = 0
@@ -292,7 +292,7 @@ Instance.new("UICorner", LogoCircle).CornerRadius = UDim.new(1, 0)
 local L_Stroke = Instance.new("UIStroke", LogoCircle) L_Stroke.Color = Color3.fromRGB(0, 255, 200); L_Stroke.Thickness = 1.5
 
 local LogoText = Instance.new("TextLabel", LogoCircle)
-LogoText.Size = UDim2.new(1, 0, 1, 0) BackgroundTransparency = 1; LogoText.Text = "🦈" LogoText.TextSize = 28 LogoText.Font = Enum.Font.GothamBold
+LogoText.Size = UDim2.new(1, 0, 1, 0) LogoText.BackgroundTransparency = 1; LogoText.Text = "🦈" LogoText.TextSize = 28 LogoText.Font = Enum.Font.GothamBold
 
 local BTitle = Instance.new("TextLabel", Sidebar)
 BTitle.Size = UDim2.new(1, 0, 0, 16) BTitle.Position = UDim2.new(0, 0, 0, 80)
@@ -332,7 +332,7 @@ Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 8)
 
 local Separator = Instance.new("Frame", MainPanel)
 Separator.Size = UDim2.new(1, -20, 0, 1) Separator.Position = UDim2.new(0, 10, 0, 49)
-Separator.BackgroundColor3 = Color3.fromRGB(25, 30, 45) BORDER_SIZE = 0
+Separator.BackgroundColor3 = Color3.fromRGB(25, 30, 45) Separator.BorderSizePixel = 0
 
 local ContentBody = Instance.new("ScrollingFrame", MainPanel)
 ContentBody.Size = UDim2.new(1, -20, 1, -65) ContentBody.Position = UDim2.new(0, 10, 0, 60)
@@ -342,7 +342,6 @@ ContentBody.ScrollBarThickness = 0
 local ContentLayout = Instance.new("UIListLayout", ContentBody)
 ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder; ContentLayout.Padding = UDim.new(0, 12)
 
--- NÚT MỞ MENU KHI THU NHỎ
 local OpenBtn = Instance.new("TextButton", ScreenGui)
 OpenBtn.Size = UDim2.new(0, 56, 0, 56) OpenBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
 OpenBtn.BackgroundColor3 = Color3.fromRGB(11, 11, 16) OpenBtn.Text = "🦈"
@@ -357,13 +356,12 @@ FOVCircle.BackgroundTransparency = 1; FOVCircle.Visible = false
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 local FC_Stroke = Instance.new("UIStroke", FOVCircle) FC_Stroke.Color = Color3.fromRGB(0, 255, 200); FC_Stroke.Thickness = 1.5
 
--- HOÀN THIỆN DẢI ĐIỀU HƯỚNG KÉO THẢ CHO MAIN MENU
 local MainDragBar = Instance.new("Frame", MainContainer)
 MainDragBar.Size = UDim2.new(1, -50, 0, 50) MainDragBar.BackgroundTransparency = 1
 makeSmoothDrag(MainContainer, MainDragBar)
 
 -- =====================================================================
--- [ THIẾT KẾ THÀNH PHẦN TÍNH NĂNG HOÀN CHỈNH ]
+-- [ THIẾT KẾ THÀNH PHẦN TÍNH NĂNG ]
 -- =====================================================================
 local function createSharkToggle(titleText, descText, icon, defaultState, callback)
     local Card = Instance.new("Frame", ContentBody) Card.Size = UDim2.new(1, 0, 0, 64) Card.BackgroundColor3 = Color3.fromRGB(14, 16, 24)
@@ -371,7 +369,7 @@ local function createSharkToggle(titleText, descText, icon, defaultState, callba
     local Stroke = Instance.new("UIStroke", Card) Stroke.Color = Color3.fromRGB(26, 32, 48)
 
     local IconL = Instance.new("TextLabel", Card) IconL.Size = UDim2.new(0, 32, 0, 32) IconL.Position = UDim2.new(0, 14, 0, 16)
-    IconL.BackgroundTransparency = 1; IconL.Text = icon; IconL.Text = icon; IconL.TextSize = 20
+    IconL.BackgroundTransparency = 1; IconL.Text = icon; IconL.TextSize = 20
 
     local TxtL = Instance.new("TextLabel", Card) TxtL.Size = UDim2.new(0, 180, 0, 16) TxtL.Position = UDim2.new(0, 54, 0, 14)
     TxtL.BackgroundTransparency = 1; TxtL.Text = titleText; TxtL.TextColor3 = Color3.fromRGB(255, 255, 255) TxtL.Font = Enum.Font.GothamBold; TxtL.TextSize = 13; TxtL.TextXAlignment = Enum.TextXAlignment.Left
@@ -538,7 +536,7 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 -- =====================================================================
--- [ KÍCH HOẠT ĐỘNG CƠ DẪN TRUYỀN KEY SYSTEM CHÍNH THỨC ]
+-- [ KÍCH HOẠT ĐỘNG CƠ DẪN TRUYỀN KEY SYSTEM ]
 -- =====================================================================
 local function triggerMainGuiOpen()
     playPopUpAnimation(LoadingMenu, true, UDim2.new(0, 150, 0, 100), function()
@@ -550,7 +548,6 @@ local function triggerMainGuiOpen()
     end)
 end
 
--- EVENT CLICK NÚT TRÊN KEY MENU
 GetKeyBtn.MouseButton1Click:Connect(function()
     playPopUpAnimation(KeyMenu, false, UDim2.new(0, 220, 0, 160), function()
         CountdownTime = 180
@@ -562,7 +559,7 @@ end)
 
 VerifyBtn.MouseButton1Click:Connect(function()
     if KeyInput.Text == CorrectKey then
-        pcall(function() writefile("shark_v3_key.txt", tostring(os.time())) end) -- Lưu Key 24 tiếng vào ổ cứng máy
+        pcall(function() writefile("shark_v3_key.txt", tostring(os.time())) end) 
         KM_Stroke.Color = Color3.fromRGB(50, 255, 50)
         VerifyBtn.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
         task.wait(0.4)
@@ -576,12 +573,11 @@ VerifyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC KIỂM TRA BẢO MẬT GIA HẠN 24 GIỜ KHI KHỞI ĐỘNG EXECUTOR
 local keyBypass = false
 local fileSuccess, fileContent = pcall(function() return readfile("shark_v3_key.txt") end)
 if fileSuccess and fileContent then
     local savedTime = tonumber(fileContent)
-    if savedTime and (os.time() - savedTime) < 86400 then -- 86400 giây tương đương 24 tiếng
+    if savedTime and (os.time() - savedTime) < 86400 then 
         keyBypass = true
     end
 end
@@ -592,7 +588,6 @@ else
     playPopUpAnimation(KeyMenu, true, UDim2.new(0, 220, 0, 160))
 end
 
--- CÁC NÚT ĐIỀU HƯỚNG ĐÓNG / THU NHỎ CONSOLE
 MinimizeBtn.MouseButton1Click:Connect(function()
     playPopUpAnimation(MainContainer, false, UDim2.new(0, 530, 0, 330), function()
         OpenBtn.Visible = true
