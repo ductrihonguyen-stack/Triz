@@ -1,0 +1,679 @@
+-- [[ SHARK MENU V2 - ONLY FLY, AIMBOT & HITBOX (MOBILE OPTIMIZED) ]] --
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- --- [ BỘ LỌC CHỐNG SẬP UI MOBILE ] ---
+local ParentGui
+if gethui then
+    ParentGui = gethui()
+else
+    local success, _ = pcall(function() ParentGui = game:GetService("CoreGui") end)
+    if not success or not ParentGui then 
+        ParentGui = LocalPlayer:WaitForChild("PlayerGui") 
+    end
+end
+
+if ParentGui:FindFirstChild("SharkMenuGui") then 
+    ParentGui:FindFirstChild("SharkMenuGui"):Destroy() 
+end
+
+-- TRẠNG THÁI HỆ THỐNG CỐT LÕI
+local States = {
+    MenuOpen = false,
+    Fly = false,
+    FlySpeed = 80,
+    Aimbot = false,
+    Hitbox = false -- Trạng thái Hitbox ESP
+}
+
+local FOV_RADIUS = 95 
+local TARGET_PART = "Head"
+local CurrentTarget = nil
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+local ESPObjects = {} -- Lưu trữ danh sách ESP công khai
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SharkMenuGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true 
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = ParentGui
+
+-- --- [ VÒNG TRÒN AIMBOT CHUẨN TÂM MÀN HÌNH ] ---
+local FOVCircle = Instance.new("Frame")
+local FOVCorner = Instance.new("UICorner")
+local FOVStroke = Instance.new("UIStroke")
+FOVCircle.Size = UDim2.new(0, FOV_RADIUS * 2, 0, FOV_RADIUS * 2)
+FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0) 
+FOVCircle.BackgroundTransparency = 1
+FOVCircle.Visible = false
+FOVCircle.Parent = ScreenGui
+FOVCorner.CornerRadius = UDim.new(1, 0)
+FOVCorner.Parent = FOVCircle
+FOVStroke.Color = Color3.fromRGB(0, 140, 255)
+FOVStroke.Thickness = 1.5
+FOVStroke.Parent = FOVCircle
+
+
+-- --- [ 1. NÚT VUÔNG MỞ MENU GỐC 🦈 ] ---
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Name = "SharkOpenBtn"
+OpenBtn.Size = UDim2.new(0, 55, 0, 55)
+OpenBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+OpenBtn.Text = "🦈"
+OpenBtn.TextSize = 28
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenBtn.Visible = true 
+OpenBtn.Active = true
+OpenBtn.ZIndex = 15
+OpenBtn.Parent = ScreenGui
+
+local OpenCorner = Instance.new("UICorner") OpenCorner.CornerRadius = UDim.new(0, 12) OpenCorner.Parent = OpenBtn
+local OpenStroke = Instance.new("UIStroke") OpenStroke.Color = Color3.fromRGB(0, 140, 255) OpenStroke.Thickness = 2 OpenStroke.Parent = OpenBtn
+
+
+-- --- [ 2. KHUNG CHÍNH (SHARK SIDEBAR FRAME) ] ---
+local MainContainer = Instance.new("Frame")
+MainContainer.Name = "MainContainer"
+MainContainer.Size = UDim2.new(0, 385, 0, 330) 
+MainContainer.AnchorPoint = Vector2.new(0.5, 0.5) 
+MainContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainContainer.BackgroundTransparency = 1
+MainContainer.Visible = false 
+MainContainer.Active = false
+MainContainer.Parent = ScreenGui
+
+
+-- --- [ 3. SIDEBAR TRÁI ] ---
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 105, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainContainer
+
+local SidebarCorner = Instance.new("UICorner") SidebarCorner.CornerRadius = UDim.new(0, 14) SidebarCorner.Parent = Sidebar
+local SidebarStroke = Instance.new("UIStroke") SidebarStroke.Color = Color3.fromRGB(0, 140, 255) SidebarStroke.Thickness = 1.5 SidebarStroke.Parent = Sidebar
+
+local LogoCircle = Instance.new("Frame")
+LogoCircle.Size = UDim2.new(0, 56, 0, 56)
+LogoCircle.Position = UDim2.new(0.5, -28, 0, 16)
+LogoCircle.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+LogoCircle.Parent = Sidebar
+local LCC = Instance.new("UICorner") LCC.CornerRadius = UDim.new(1, 0) LCC.Parent = LogoCircle
+local LCS = Instance.new("UIStroke") LCS.Color = Color3.fromRGB(0, 110, 220) LCS.Thickness = 1 LCS.Parent = LogoCircle
+
+local LogoIcon = Instance.new("TextLabel")
+LogoIcon.Size = UDim2.new(1, 0, 1, 0)
+LogoIcon.BackgroundTransparency = 1
+LogoIcon.Text = "🦈"
+LogoIcon.TextSize = 30
+LogoIcon.Font = Enum.Font.GothamBold
+LogoIcon.Parent = LogoCircle
+
+local BrandTitle = Instance.new("TextLabel")
+BrandTitle.Size = UDim2.new(1, 0, 0, 16)
+BrandTitle.Position = UDim2.new(0, 0, 0, 78)
+BrandTitle.BackgroundTransparency = 1
+BrandTitle.Text = "SHARK"
+BrandTitle.TextColor3 = Color3.fromRGB(0, 140, 255)
+BrandTitle.Font = Enum.Font.GothamBold
+BrandTitle.TextSize = 12
+BrandTitle.Parent = Sidebar
+
+local BrandSubtitle = Instance.new("TextLabel")
+BrandSubtitle.Size = UDim2.new(1, 0, 0, 10)
+BrandSubtitle.Position = UDim2.new(0, 0, 0, 92)
+BrandSubtitle.BackgroundTransparency = 1
+BrandSubtitle.Text = "M E N U"
+BrandSubtitle.TextColor3 = Color3.fromRGB(100, 100, 100)
+BrandSubtitle.Font = Enum.Font.Gotham
+BrandSubtitle.TextSize = 8
+BrandSubtitle.Parent = Sidebar
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 0, 120)
+TabContainer.Position = UDim2.new(0, 0, 0, 120)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = Sidebar
+
+local TabMain = Instance.new("Frame")
+TabMain.Size = UDim2.new(1, -12, 0, 32)
+TabMain.Position = UDim2.new(0, 6, 0, 0)
+TabMain.BackgroundColor3 = Color3.fromRGB(20, 30, 45)
+TabMain.BackgroundTransparency = 0.4
+local TMC = Instance.new("UICorner") TMC.CornerRadius = UDim.new(0, 6) TMC.Parent = TabMain
+local TMT = Instance.new("TextLabel")
+TMT.Size = UDim2.new(1, 0, 1, 0) TMT.BackgroundTransparency = 1 TMT.Text = "🏠  MAIN"
+TMT.TextColor3 = Color3.fromRGB(0, 140, 255) TMT.Font = Enum.Font.GothamBold TMT.TextSize = 10 TMT.Parent = TabMain
+TabMain.Parent = TabContainer
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(1, -16, 0, 32)
+CloseBtn.Position = UDim2.new(0, 8, 1, -42)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "❌ CLOSE"
+CloseBtn.TextColor3 = Color3.fromRGB(0, 140, 255)
+CloseBtn.TextSize = 10
+CloseBtn.Active = true
+CloseBtn.ZIndex = 10
+CloseBtn.Parent = Sidebar
+local CloseCorner = Instance.new("UICorner") CloseCorner.CornerRadius = UDim.new(0, 8) CloseCorner.Parent = CloseBtn
+local CloseStroke = Instance.new("UIStroke") CloseStroke.Color = Color3.fromRGB(0, 70, 150) CloseStroke.Thickness = 1 CloseStroke.Parent = CloseBtn
+
+
+-- --- [ 4. PANEL PHẢI ] ---
+local MainPanel = Instance.new("Frame")
+MainPanel.Name = "MainPanel"
+MainPanel.Size = UDim2.new(0, 275, 1, 0)
+MainPanel.Position = UDim2.new(0, 110, 0, 0) 
+MainPanel.BackgroundColor3 = Color3.fromRGB(11, 11, 11)
+MainPanel.BorderSizePixel = 0
+MainPanel.Parent = MainContainer
+
+local PanelCorner = Instance.new("UICorner") PanelCorner.CornerRadius = UDim.new(0, 14) PanelCorner.Parent = MainPanel
+local PanelStroke = Instance.new("UIStroke") PanelStroke.Color = Color3.fromRGB(0, 140, 255) PanelStroke.Thickness = 1.5 PanelStroke.Parent = MainPanel
+
+local PanelHeader = Instance.new("Frame")
+PanelHeader.Size = UDim2.new(1, 0, 0, 50)
+PanelHeader.BackgroundTransparency = 1
+PanelHeader.Parent = MainPanel
+
+local PanelTitle = Instance.new("TextLabel")
+PanelTitle.Size = UDim2.new(1, 0, 1, 0)
+PanelTitle.BackgroundTransparency = 1
+PanelTitle.Text = "SHARK SYSTEM ENGINE"
+PanelTitle.TextColor3 = Color3.fromRGB(0, 140, 255)
+PanelTitle.Font = Enum.Font.GothamBold
+PanelTitle.TextSize = 13
+PanelTitle.Parent = PanelHeader
+
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(0, 24, 0, 22)
+MinimizeBtn.Position = UDim2.new(1, -34, 0.5, -11)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeBtn.TextSize = 11
+MinimizeBtn.Active = true
+MinimizeBtn.ZIndex = 10
+MinimizeBtn.Parent = PanelHeader
+local MiniCorner = Instance.new("UICorner") MiniCorner.CornerRadius = UDim.new(0, 6) MiniCorner.Parent = MinimizeBtn
+local MiniStroke = Instance.new("UIStroke") MiniStroke.Color = Color3.fromRGB(40, 40, 40) MiniStroke.Thickness = 1 MiniStroke.Parent = MinimizeBtn
+
+local Separator = Instance.new("Frame")
+Separator.Size = UDim2.new(1, -24, 0, 1)
+Separator.Position = UDim2.new(0, 12, 0, 48)
+Separator.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Separator.BorderSizePixel = 0
+Separator.Parent = MainPanel
+
+local ContentBody = Instance.new("ScrollingFrame")
+ContentBody.Size = UDim2.new(1, -20, 1, -64)
+ContentBody.Position = UDim2.new(0, 10, 0, 54)
+ContentBody.BackgroundTransparency = 1
+ContentBody.CanvasSize = UDim2.new(0, 0, 0, 380) -- Tăng không gian cuộn để chứa vừa vặn 4 thẻ
+ContentBody.ScrollBarThickness = 0
+ContentBody.Parent = MainPanel
+
+local ContentLayout = Instance.new("UIListLayout")
+ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ContentLayout.Padding = UDim.new(0, 10)
+ContentLayout.Parent = ContentBody
+
+
+-- --- [ 5. HÀM TẠO TOGGLE CARD ] ---
+local function createSharkToggle(titleText, descText, icon, defaultState, callback)
+    local Card = Instance.new("Frame")
+    Card.Size = UDim2.new(1, 0, 0, 65)
+    Card.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Card.Parent = ContentBody
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
+    local Stroke = Instance.new("UIStroke", Card) Stroke.Color = Color3.fromRGB(24, 24, 24)
+
+    local IconLabel = Instance.new("TextLabel", Card)
+    IconLabel.Size = UDim2.new(0, 30, 0, 30) IconLabel.Position = UDim2.new(0, 12, 0, 17)
+    IconLabel.BackgroundTransparency = 1 IconLabel.Text = icon IconLabel.TextSize = 20 IconLabel.Parent = Card
+
+    local TxtLabel = Instance.new("TextLabel", Card)
+    TxtLabel.Size = UDim2.new(0, 140, 0, 16) TxtLabel.Position = UDim2.new(0, 48, 0, 14)
+    TxtLabel.BackgroundTransparency = 1 TxtLabel.Text = titleText TxtLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TxtLabel.Font = Enum.Font.GothamBold TxtLabel.TextSize = 12 TxtLabel.TextXAlignment = Enum.TextXAlignment.Left TxtLabel.Parent = Card
+
+    local DscLabel = Instance.new("TextLabel", Card)
+    DscLabel.Size = UDim2.new(0, 140, 0, 14) DscLabel.Position = UDim2.new(0, 48, 0, 32)
+    DscLabel.BackgroundTransparency = 1 DscLabel.Text = descText DscLabel.TextColor3 = Color3.fromRGB(140, 140, 140)
+    DscLabel.Font = Enum.Font.Gotham DscLabel.TextSize = 9 DscLabel.TextXAlignment = Enum.TextXAlignment.Left DscLabel.Parent = Card
+
+    local ToggleOuter = Instance.new("TextButton", Card)
+    ToggleOuter.Size = UDim2.new(0, 52, 0, 24) ToggleOuter.Position = UDim2.new(1, -64, 0.5, -12)
+    ToggleOuter.BackgroundColor3 = defaultState and Color3.fromRGB(0, 140, 255) or Color3.fromRGB(30, 30, 30)
+    ToggleOuter.Text = defaultState and "ON" or "OFF"
+    ToggleOuter.Font = Enum.Font.GothamBold ToggleOuter.TextColor3 = defaultState and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+    ToggleOuter.TextSize = 9
+    Instance.new("UICorner", ToggleOuter).CornerRadius = UDim.new(1, 0)
+
+    local ToggleBall = Instance.new("Frame", ToggleOuter)
+    ToggleBall.Size = UDim2.new(0, 18, 0, 18) ToggleBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleBall.Position = defaultState and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+    Instance.new("UICorner", ToggleBall).CornerRadius = UDim.new(1, 0)
+
+    ToggleOuter.MouseButton1Click:Connect(function()
+        local state = ToggleOuter.Text == "OFF"
+        ToggleOuter.Text = state and "ON" or "OFF"
+        ToggleOuter.BackgroundColor3 = state and Color3.fromRGB(0, 140, 255) or Color3.fromRGB(30, 30, 30)
+        ToggleOuter.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+        ToggleBall.Position = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+        callback(state)
+    end)
+end
+
+
+-- --- [ 6. HÀM TẠO THANH TRƯỢT SỐ CAO CẤP GÕ PHÍM ] ---
+local function createSharkSlider(titleText, descText, icon, minVal, maxVal, defaultVal, callback)
+    local Card = Instance.new("Frame")
+    Card.Size = UDim2.new(1, 0, 0, 105)
+    Card.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Card.Parent = ContentBody
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
+    local Stroke = Instance.new("UIStroke", Card) Stroke.Color = Color3.fromRGB(24, 24, 24)
+
+    local IconLabel = Instance.new("TextLabel", Card)
+    IconLabel.Size = UDim2.new(0, 30, 0, 30) IconLabel.Position = UDim2.new(0, 12, 0, 12)
+    IconLabel.BackgroundTransparency = 1 IconLabel.Text = icon IconLabel.TextSize = 20 IconLabel.Parent = Card
+
+    local TxtLabel = Instance.new("TextLabel", Card)
+    TxtLabel.Size = UDim2.new(0, 160, 0, 16) TxtLabel.Position = UDim2.new(0, 48, 0, 12)
+    TxtLabel.BackgroundTransparency = 1 TxtLabel.Text = titleText TxtLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TxtLabel.Font = Enum.Font.GothamBold TxtLabel.TextSize = 12 TxtLabel.TextXAlignment = Enum.TextXAlignment.Left TxtLabel.Parent = Card
+
+    local DscLabel = Instance.new("TextLabel", Card)
+    DscLabel.Size = UDim2.new(0, 160, 0, 14) DscLabel.Position = UDim2.new(0, 48, 0, 28)
+    DscLabel.BackgroundTransparency = 1 DscLabel.Text = descText DscLabel.TextColor3 = Color3.fromRGB(140, 140, 140)
+    DscLabel.Font = Enum.Font.Gotham DscLabel.TextSize = 9 DscLabel.TextXAlignment = Enum.TextXAlignment.Left DscLabel.Parent = Card
+
+    local Container = Instance.new("Frame", Card)
+    Container.Size = UDim2.new(1, -24, 0, 32) Container.Position = UDim2.new(0, 12, 0, 56)
+    Container.BackgroundTransparency = 1
+
+    local Minus = Instance.new("TextButton", Container)
+    Minus.Size = UDim2.new(0, 44, 1, 0) Minus.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
+    Minus.Text = "—" Minus.Font = Enum.Font.GothamBold Minus.TextColor3 = Color3.fromRGB(0, 160, 255) Minus.TextSize = 12
+    Instance.new("UICorner", Minus).CornerRadius = UDim.new(0, 6)
+    local MS = Instance.new("UIStroke", Minus) MS.Color = Color3.fromRGB(0, 100, 220)
+
+    local Plus = Instance.new("TextButton", Container)
+    Plus.Size = UDim2.new(0, 44, 1, 0) Plus.Position = UDim2.new(1, -44, 0, 0) Plus.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
+    Plus.Text = "+" Plus.Font = Enum.Font.GothamBold Plus.TextColor3 = Color3.fromRGB(0, 160, 255) Plus.TextSize = 14
+    Instance.new("UICorner", Plus).CornerRadius = UDim.new(0, 6)
+    local PS = Instance.new("UIStroke", Plus) PS.Color = Color3.fromRGB(0, 100, 220)
+
+    local ValBox = Instance.new("TextBox", Container)
+    ValBox.Size = UDim2.new(1, -100, 1, 0) ValBox.Position = UDim2.new(0, 50, 0, 0)
+    ValBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10) ValBox.Text = tostring(defaultVal)
+    ValBox.Font = Enum.Font.GothamBold ValBox.TextColor3 = Color3.fromRGB(255, 255, 255) ValBox.TextSize = 13
+    ValBox.ClearTextOnFocus = false
+    Instance.new("UICorner", ValBox).CornerRadius = UDim.new(0, 6)
+    local VS = Instance.new("UIStroke", ValBox) VS.Color = Color3.fromRGB(25, 25, 25)
+
+    local current = defaultVal
+    local function update(val)
+        current = math.clamp(val, minVal, maxVal)
+        ValBox.Text = tostring(current)
+        callback(current)
+    end
+
+    local function setupHold(button, step)
+        local holding = false
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                holding = true
+                update(current + step)
+                task.wait(0.4)
+                while holding do
+                    update(current + step)
+                    task.wait(0.03)
+                end
+            end
+        end)
+        button.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                holding = false
+            end
+        end)
+    end
+
+    setupHold(Minus, -1)
+    setupHold(Plus, 1)
+
+    ValBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local clean = ValBox.Text:gsub("%D", "")
+        if ValBox.Text ~= clean then ValBox.Text = clean end
+        local num = tonumber(clean)
+        if num then
+            current = math.clamp(num, minVal, maxVal)
+            callback(current)
+        end
+    end)
+
+    ValBox.FocusLost:Connect(function() update(current) end)
+end
+
+
+-- --- [ 7. LOGIC TÍNH NĂNG CỐT LÕI ] ---
+
+-- CHỨC NĂNG 1: FLY ENGINE
+local function startFlyingEngine()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.Parent = hrp
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    bodyGyro.CFrame = hrp.CFrame
+    bodyGyro.Parent = hrp
+    
+    humanoid.PlatformStand = true
+    
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not States.Fly or not hrp or not humanoid then return end
+        bodyGyro.CFrame = Camera.CFrame
+        
+        local moveDirection = humanoid.MoveDirection
+        if moveDirection.Magnitude > 0 then
+            local camX = Camera.CFrame.RightVector
+            local camZ = Camera.CFrame.LookVector
+            
+            local forwardForce = moveDirection:Dot(Vector3.new(camZ.X, 0, camZ.Z).Unit)
+            local rightForce = moveDirection:Dot(Vector3.new(camX.X, 0, camX.Z).Unit)
+            
+            local finalFlyVector = (camZ * forwardForce) + (camX * rightForce)
+            if finalFlyVector.Magnitude > 0 then finalFlyVector = finalFlyVector.Unit end
+            
+            bodyVelocity.Velocity = finalFlyVector * States.FlySpeed
+        else
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+    end)
+end
+
+local function stopFlyingEngine()
+    if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
+end
+
+createSharkToggle("FLY ENGINE", "Bay tự do (Mặc định tốc độ 80)", "🚀", States.Fly, function(state)
+    States.Fly = state
+    if state then startFlyingEngine() else stopFlyingEngine() end
+end)
+
+createSharkSlider("FLY SPEED", "Tốc độ bay tự do nhân vật", "⚡", 1, 999999, States.FlySpeed, function(val)
+    States.FlySpeed = val
+end)
+
+
+-- CHỨC NĂNG 2: AIMBOT CAMERA LOCK-ON
+local function checkLineOfSight(character, targetPart)
+    if not LocalPlayer.Character then return false end
+    local origin = Camera.CFrame.Position
+    local direction = targetPart.Position - origin
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {LocalPlayer.Character, character}
+    
+    local res = workspace:Raycast(origin, direction, params)
+    return res == nil
+end
+
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local part = p.Character:FindFirstChild(TARGET_PART) 
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if part and hum and hum.Health > 0 then
+                if checkLineOfSight(p.Character, part) then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen then
+                          local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist <= FOV_RADIUS and dist < shortestDistance then
+                            closestPlayer = p
+                            shortestDistance = dist
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local function updateAimbot()
+    if not States.Aimbot then return end
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
+    if not CurrentTarget or not CurrentTarget.Character or not CurrentTarget.Character:FindFirstChild(TARGET_PART) or (CurrentTarget.Character:FindFirstChildOfClass("Humanoid") and CurrentTarget.Character:FindFirstChildOfClass("Humanoid").Health <= 0) then
+        CurrentTarget = getClosestPlayer()
+    else
+        local part = CurrentTarget.Character[TARGET_PART]
+        if not checkLineOfSight(CurrentTarget.Character, part) then
+            CurrentTarget = nil
+            return
+        end
+        
+        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+        if onScreen then
+            local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+            if dist > FOV_RADIUS then
+                CurrentTarget = nil 
+                return
+            end
+        else
+            CurrentTarget = nil
+            return
+        end
+    end
+
+    if CurrentTarget and CurrentTarget.Character and CurrentTarget.Character:FindFirstChild(TARGET_PART) then
+        Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, CurrentTarget.Character[TARGET_PART].Position)
+    end
+end
+
+createSharkToggle("AIMBOT LOCK", "Khóa ngắm camera góc nhìn 1/3", "🎯", States.Aimbot, function(state)
+    States.Aimbot = state
+    if state then
+        FOVCircle.Visible = true
+        RunService:BindToRenderStep("SharkLockOnMobile", Enum.RenderPriority.Camera.Value + 1, updateAimbot)
+    else
+        FOVCircle.Visible = false
+        RunService:UnbindFromRenderStep("SharkLockOnMobile")
+        CurrentTarget = nil
+    end
+end)
+
+
+-- CHỨC NĂNG 3: HITBOX ESP INTEGRATION (Tích hợp chuẩn logic gốc)
+local function addESP(player)
+    if player == LocalPlayer then return end
+    if not player.Character then return end
+    if ESPObjects[player] then return end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.Enabled = States.Hitbox
+    highlight.Parent = player.Character
+
+    ESPObjects[player] = highlight
+end
+
+local function removeESP()
+    for _, h in pairs(ESPObjects) do
+        if h then h:Destroy() end
+    end
+    table.clear(ESPObjects)
+end
+
+local function updateESP()
+    if States.Hitbox then
+        for _, plr in pairs(Players:GetPlayers()) do
+            addESP(plr)
+        end
+    else
+        removeESP()
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        task.wait(1)
+        if States.Hitbox then
+            addESP(plr)
+        end
+    end)
+end)
+
+-- Tạo ô bật tắt Hitbox giống 100% như thiết kế trong ảnh Rocket Menu
+createSharkToggle("HITBOX", "Hiển thị hitbox người chơi", "📦", States.Hitbox, function(state)
+    States.Hitbox = state
+    updateESP()
+end)
+
+
+-- --- [ 8. DẢI KÉO THẢ VÔ HÌNH ] ---
+local UnifiedDragBar = Instance.new("Frame")
+UnifiedDragBar.Name = "UnifiedDragBar"
+UnifiedDragBar.Size = UDim2.new(1, -60, 0, 110) 
+UnifiedDragBar.BackgroundTransparency = 0.99 
+UnifiedDragBar.Active = true
+UnifiedDragBar.ZIndex = 8
+UnifiedDragBar.Parent = MainContainer
+
+local function makeMobileSmoothDrag(targetFrame, handleArea)
+    local dragToggle = false
+    local dragStart = nil
+    local startPos = nil
+
+    handleArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragToggle = true
+            dragStart = input.Position
+            startPos = Vector2.new(targetFrame.Position.X.Offset, targetFrame.Position.Y.Offset)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            targetFrame.Position = UDim2.new(
+                targetFrame.Position.X.Scale, 
+                startPos.X + delta.X, 
+                targetFrame.Position.Y.Scale, 
+                startPos.Y + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragToggle = false
+        end
+    end)
+end
+
+makeMobileSmoothDrag(MainContainer, UnifiedDragBar)
+
+
+-- --- [ 9. ĐỘNG CƠ THÔNG MINH CHO NÚT MỞ 🦈 ] ---
+local function makeButtonSmartEngine(btnFrame, clickCallback)
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    local hasMovedSignificant = false
+
+    btnFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            hasMovedSignificant = false
+            dragStart = input.Position
+            startPos = Vector2.new(btnFrame.Position.X.Offset, btnFrame.Position.Y.Offset)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            if delta.Magnitude > 5 then
+                hasMovedSignificant = true
+            end
+            btnFrame.Position = UDim2.new(
+                btnFrame.Position.X.Scale, 
+                startPos.X + delta.X, 
+                btnFrame.Position.Y.Scale, 
+                startPos.Y + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                dragging = false
+                if not hasMovedSignificant and btnFrame.Visible then
+                    clickCallback()
+                end
+            end
+        end
+    end)
+end
+
+makeButtonSmartEngine(OpenBtn, function()
+    MainContainer.Visible = true
+    OpenBtn.Visible = false
+end)
+
+
+-- --- [ 10. NÚT PHỤ TRỢ THU NHỎ / ĐÓNG ] ---
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainContainer.Visible = false
+    OpenBtn.Visible = true
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    stopFlyingEngine()
+    removeESP()
+    if flyConnection then flyConnection:Disconnect() end
+    RunService:UnbindFromRenderStep("SharkLockOnMobile")
+    ScreenGui:Destroy()
+end)
